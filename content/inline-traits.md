@@ -52,10 +52,10 @@ class C extends T:
 
 The implementations of `x` and `f` are inlined in `C`. As they are inlined, they are not needed in the trait anymore. The resulting code after inlining is:
 
-```
+```scala
 trait T:
-  val x: Int
-  def f: Int
+  val x: Int // implementation discarded
+  def f: Int // implementation discarded
   def g(i: Int): Int
 
 class C extends T:
@@ -73,48 +73,51 @@ For example, if the syntax of the language is changed, this section should list 
 
 #### Methods in inline traits
 
-##### Source
+
 ```scala
-inline trait InlineTrait:
-  def f(x1: T1, ..., xn: Tn): R = ...
+inline trait InlineTrait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 
 class C extends InlineTrait
 ```
-##### After typing (pickled)
 
 When typing a class that extends an inline trait, the non-abstract methods of the inline trait are identified and a forwarder is created for each one of them.
 The forwarder is a method that calls the implementation of the method in the inline trait.
 
-```scala
-inline trait InlineTrait:
-  // annotated as inlinable but not inline (only inlined in extending class)
-  def f(x1: T1, ..., xn: Tn): R = ...
+<details>
+<summary>After typing (pickled)</summary>
 
-class C extends InlineTrait:
-  override def f(x1: T1, ..., xn: Tn): R = super.f(x1, ..., xn)
+```scala
+inline trait InlineTrait[...]:
+  // annotated as inlinable but not inline (only inlined in extending class)
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R =
+    ...
+
+class C extends InlineTrait[...]:
+  override def f[U1, ..., Un](x1: T1, ..., xn: Tn): R =
+    super.f[U1, ..., Un](x1, ..., xn)
 ```
+</details>
 
 The purpose of the forwarder is to generate the method signature in the class.
-This can be useful to avoid unnecessary virtual calls. For example a call to `c.f(...)` on a `c: C` will be typed as calling `C.f` directly.
+This can be useful to avoid unnecessary virtual calls. For example a call to `c.f[...](...)` on a `c: C` will be typed as calling `C.f` directly.
 If the trait is generic, this can also allow calls to used the non-boxed version of the method.
 
-
-##### Inlining phase
-
 The call in the forwarder is inlined as if it was a call to an inline method.
-
-```scala
-class C extends InlineTrait:
-  def f(x1: T1, ..., xn: Tn): R = ...
-```
-
 All the implementations in `InlineTrait` are made abstract.
 These methods are guaranteed to have an implementation in the subclass.
 
+<details>
+<summary>After inlining</summary>
+
 ```scala
-inline trait InlineTrait:
-  def f(x1: T1, ..., xn: Tn): R
+inline trait InlineTrait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R
+
+class C extends InlineTrait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 ```
+</details>
 
 #### Abstract methods in inline traits
 
@@ -122,11 +125,11 @@ Inline traits can have abstract methods.
 These are handled as regular abstract methods.
 
 ```scala
-inline trait InlineTrait:
-  def g(x1: T1, ..., xn: Tn): R
+inline trait InlineTrait[...]:
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R
 
 class C extends InlineTrait:
-  def g(x1: T1, ..., xn: Tn): R = ...
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 ```
 
 #### Overridden methods in inline traits
@@ -135,27 +138,50 @@ A class can override a method defined in an inline trait.
 Nothing needs to be generated in the class in this case.
 
 ```scala
-inline trait InlineTrait:
-  def f(x1: T1, ..., xn: Tn): R = ...
+inline trait InlineTrait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 
-class C extends InlineTrait:
-  override def f(x1: T1, ..., xn: Tn): R = ...
+class C extends InlineTrait[...]:
+  override def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 ```
 
 #### Final methods in inline traits
 
 Inline trait methods can be final.
-They are typed the same way as non-final methods, but we need to allow the override of final methods with the forwarder.
 
 ```scala
-inline trait InlineTrait:
-  final def f(x1: T1, ..., xn: Tn): R = ...
+inline trait InlineTrait[...]:
+  final def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 
-class C extends InlineTrait:
-  override final def f(x1: T1, ..., xn: Tn): R = super.f(x1, ..., xn)
+class C extends InlineTrait[...]
 ```
 
-The final modifier must be removed from `InlineTrait.f` after inlining.
+<details>
+<summary>
+After typing (pickled): They are typed the same way as non-final methods, but we need to allow the override of final methods with the forwarder.
+</summary>
+
+```scala
+inline trait InlineTrait[...]:
+  final def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
+
+class C extends InlineTrait[...]:
+  override final def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = super.f(x1, ..., xn)
+```
+</details>
+
+
+<details>
+<summary>After inlining: The final modifier must be removed from `InlineTrait.f` after inlining.</summary>
+
+```scala
+inline trait InlineTrait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R // optimized away
+
+class C extends InlineTrait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ... // inlined
+```
+</details>
 
 #### Implementing or overriding methods in inline traits
 
@@ -163,13 +189,13 @@ An inline trait can implement or override a method from a parent trait.
 These are handled as regular methods in inline traits.
 
 ```scala
-trait Trait:
-  def f(x1: T1, ..., xn: Tn): R
-  def g(x1: T1, ..., xn: Tn): R = ...
+trait Trait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 
-inline trait InlineTrait extends Trait:
-  def f(x1: T1, ..., xn: Tn): R = ...
-  override def f(x1: T1, ..., xn: Tn): R = ...
+inline trait InlineTrait[...] extends Trait[...]:
+  def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
+  override def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 ```
 
 #### Protected and package private methods in inline traits
@@ -179,8 +205,8 @@ The forwarders will be generated with the same visibility as the method in the i
 
 ```scala
 inline trait InlineTrait:
-  protected def f(x1: T1, ..., xn: Tn): R = ...
-  private[P] def g(x1: T1, ..., xn: Tn): R = ...
+  protected def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
+  private[P] def g[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
 ```
 
 
@@ -190,33 +216,158 @@ Inline trait methods can be private.
 Support for these is a bit more complex because of the scope in which private methods are visible.
 
 ```scala
-inline trait InlineTrait:
-  private def f(x1: T1, ..., xn: Tn): R = ...
-  def g(x1: T1, ..., xn: Tn): R = ... f(...) ...
+inline trait InlineTrait[...]:
+  private def f[U1, ..., Un](x1: T1, ..., xn: Tn): R = ...
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R = ... f(...) ...
 
 class C extends InlineTrait
 ```
 
-```scala
-inline trait InlineTrait:
-  protected def packagename$InlineTrait$f(x1: T1, ..., xn: Tn): R = ...
-  def g(x1: T1, ..., xn: Tn): R = ... packagename$InlineTrait$f(...) ...
-
-class C extends InlineTrait:
-  protected def packagename$InlineTrait$f(x1: T1, ..., xn: Tn): R = super.packagename$InlineTrait$f(x1, ..., xn)
-  def g(x1: T1, ..., xn: Tn): R = super.g(x1, ..., xn)
-```
+<details>
+<summary>After typing (pickled)</summary>
 
 ```scala
-inline trait InlineTrait:
-  def g(x1: T1, ..., xn: Tn): R
+inline trait InlineTrait[...]:
+  @publicInBinary private[InlineTrait] def packagename$InlineTrait$f(x1: T1, ..., xn: Tn): R = ...
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R = ... packagename$InlineTrait$f(...) ...
 
-class C extends InlineTrait:
-  private def packagename$InlineTrait$f(x1: T1, ..., xn: Tn): R = ...
-  def g(x1: T1, ..., xn: Tn): R = ... packagename$InlineTrait$f(...) ...
+class C extends InlineTrait[...]:
+  @publicInBinary private[C] def packagename$InlineTrait$f(x1: T1, ..., xn: Tn): R = super.packagename$InlineTrait$f(x1, ..., xn)
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R = super.g(x1, ..., xn)
+```
+</details>
+
+<details>
+<summary>After inlining</summary>
+
+```scala
+inline trait InlineTrait[...]:
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R // optimized away
+
+class C extends InlineTrait[...]:
+  private def packagename$InlineTrait$f(x1: T1, ..., xn: Tn): R = ... // made private
+  def g[U1, ..., Un](x1: T1, ..., xn: Tn): R = ... packagename$InlineTrait$f(...) ...
+```
+</details>
+
+#### Type members in inline traits
+
+Inline traits can contain type members.
+Nothing special needs to be done on these members.
+
+```scala
+inline trait InlineTrait[...]:
+  type X = ...
+  type Y <: ...
+  type F[T1, ..., Tn] = ...
+
+class C extends InlineTrait
 ```
 
 
+#### Inner traits in inline traits
+
+Inline traits can contain inner traits.
+These will generate a new inner trait definition in the class that extends the inline trait.
+Implementations in the inner trait will be inlined in the generated in inner trait.
+
+```scala
+inline trait InlineTrait:
+  trait InnerTrait:
+    def f(x1: T1, ..., xn: Tn): R
+    def g(x1: T1, ..., xn: Tn): R = ...
+
+class C extends InlineTrait
+```
+
+In Scala 3, a trait cannot override another trait directly.
+But we need to keep the original trait in `InlineTrait` and generate the inner trait in `C`.
+This can be encoded using an abstract type in the inline trait and a concrete trait that implements this type.
+The abstract type needs to be upper-bounded by the trait in the inline trait.
+We use the postfix `$trait` to give the inner trait a non-clashing name.
+
+<details>
+<summary>After typing (pickled)</summary>
+
+```scala
+inline trait InlineTrait:
+  type InnerTrait <: InnerTrait$trait
+  trait InnerTrait$trait:
+    def f(x1: T1, ..., xn: Tn): R
+    def g(x1: T1, ..., xn: Tn): R = ... // inlineable but not inlined
+
+class C extends InlineTrait:
+  trait InnerTrait extends InnerTrait$trait:
+    def f(x1: T1, ..., xn: Tn): R
+    def g(x1: T1, ..., xn: Tn): R = super.g(x1, ..., xn)
+```
+</details>
+
+<details>
+<summary>After Inlining phase</summary>
+
+```scala
+inline trait InlineTrait:
+  type InnerTrait <: InnerTrait$trait
+  trait InnerTrait$trait:
+    def f(x1: T1, ..., xn: Tn): R
+    def g(x1: T1, ..., xn: Tn): R // optimized away
+
+class C extends InlineTrait:
+  trait InnerTrait extends InnerTrait$trait:
+    def f(x1: T1, ..., xn: Tn): R
+    def g(x1: T1, ..., xn: Tn): R = ... // inlined
+```
+</details>
+
+
+#### Inner classes in inline traits
+
+
+```scala
+inline trait InlineTrait:
+  class InnerClass(x1: T1, ..., xn: Tn):
+    def f(x1: T1, ..., xn: Tn): R = ...
+
+class C extends InlineTrait
+```
+
+<details>
+<summary>After Typing (pickled)</summary>
+
+```scala
+inline trait InlineTrait:
+  type InnerClass <: InnerClass$inlineclass
+  trait InnerClass$trait(x1: T1, ..., xn: Tn):
+    def f(x1: T1, ..., xn: Tn): R = ...
+  def packagename$InnerClass$new(x1: T1, ..., xn: Tn): InnerClass
+
+class C extends InlineTrait:
+  class InnerClass(x1: T1, ..., xn: Tn) extends InnerClass$inlineclass:
+    def f(x1: T1, ..., xn: Tn): R = super.f(x1, ..., xn)
+  def packagename$InnerClass$new(x1: T1, ..., xn: Tn): InnerClass = new InnerClass(x1, ..., xn)
+```
+</details>
+
+
+<details>
+<summary>After inlining</summary>
+
+```scala
+inline trait InlineTrait:
+  type InnerClass <: InnerClass$inlineclass
+  trait InnerClass$trait(x1: T1, ..., xn: Tn):
+    def f(x1: T1, ..., xn: Tn): R = ...
+  def packagename$InnerClass$new(x1: T1, ..., xn: Tn): InnerClass
+
+class C extends InlineTrait:
+  class InnerClass(x1: T1, ..., xn: Tn) extends InnerClass$inlineclass:
+    def f(x1: T1, ..., xn: Tn): R = ...
+  def packagename$InnerClass$new(x1: T1, ..., xn: Tn): InnerClass = new InnerClass(x1, ..., xn)
+```
+</details>
+
+#### Inner objects in inline traits
 
 ### Compatibility
 
