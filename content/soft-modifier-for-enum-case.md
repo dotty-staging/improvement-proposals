@@ -6,7 +6,10 @@ status: draft
 title: SIP-68 - Soft Modifier for `enum` `case`
 ---
 
-**By: Katarzyna Marek and Hamza Remmal and Kacper Korban**
+**By: Katarzyna Marek<sup>1</sup> and Hamza Remmal<sup>2</sup> and Kacper Korban<sup>2</sup>**
+
+<sup>1</sup>VirtusLab<br>
+<sup>2</sup>EPFL
 
 ## History
 
