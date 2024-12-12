@@ -19,27 +19,37 @@ title: SIP-68 - Soft Modifier for `enum` `case`
 
 ## Summary
 
-A summary of the proposed changes. This should be no longer than 3 paragraphs. It is intended to serve in two ways:
+<!-- A summary of the proposed changes. This should be no longer than 3 paragraphs.
+It is intended to serve in two ways:
 
-- For a first-time reader, a high-level overview of what they should expect to see in the proposal.
-- For returning readers, a quick reminder of what the proposal is about.
+- For a first-time reader, a high-level overview of what they should expect to
+  see in the proposal.
+- For returning readers, a quick reminder of what the proposal is about. -->
+
+TODO
 
 ## Motivation
 
-A high-level overview of the proposal with:
+<!-- A high-level overview of the proposal with:
 
 - An explanation of the problems or limitations that it aims to solve,
-- A presentation of one or more use cases as running examples, with code showing how they would be addressed *using the status quo* (without the feature), and why that is not good enough.
+- A presentation of one or more use cases as running examples, with code showing
+  how they would be addressed *using the status quo* (without the feature), and
+  why that is not good enough.
 
-This section should clearly express the scope of the proposal. It should make it clear what are the goals of the proposal, and what is out of the scope of the proposal.
+This section should clearly express the scope of the proposal. It should make it
+clear what are the goals of the proposal, and what is out of the scope of the
+proposal. -->
+
+TODO
 
 ## Proposed solution
 
-This is the meat of your proposal.
-
 ### High-level overview
 
-A high-level overview of the proposed changes, and how they allow to better solve the running examples. This section should be example-heavy, and not dive into corner cases.
+<!-- A high-level overview of the proposed changes, and how they allow to better
+solve the running examples. This section should be example-heavy, and not dive
+into corner cases.
 
 Example:
 
@@ -47,45 +57,53 @@ Example:
 // This is an @main method
 @main def foo(x: Int): Unit =
   println(x)
-~~~
+~~~ -->
+
+TODO
 
 ### Specification
 
-A specification for the proposed changes, as precise as possible. This section should address difficult interactions with other language features, possible error conditions, and corner cases as much as the good behavior.
+We propose to allow the use of the soft `infix` modifier with `enum case`.
 
-For example, if the syntax of the language is changed, this section should list the differences in the grammar of the language. If it affects the type system, the section should explain how the feature interacts with it.
+This is achieved by allowing parsing soft modifiers in front of `enum case`.
+
+The updated [documentation page](https://dotty.epfl.ch/docs/reference/soft-modifier.html) should state (the
+change is **bolted**):
+> A soft modifier is treated as potential modifier of a definition if it is
+> followed by a hard modifier or a keyword combination starting a definition
+> (def, val, var, type, given, class, trait, object, enum, **enum case**, case
+> class, case object). Between the two words there may be a sequence of newline
+> tokens and soft modifiers.
+
+The parser grammar will remain unchanged, since `infix` is a `LocalModifier` and
+`LocalModifier`s are allowed before `EnumCase`
+
+An additional check will then be added to restrict soft modifiers for `enum
+case` to `infix` only.
+
+This specification change will also leave the possibility for supporting other
+soft modifiers for `enum case` in the future. (e.g. experimental soft modifier
+`erased`)
 
 ### Compatibility
 
-A justification of why the proposal will preserve backward binary and TASTy compatibility. Changes are backward binary compatible if the bytecode produced by a newer compiler can link against library bytecode produced by an older compiler. Changes are backward TASTy compatible if the TASTy files produced by older compilers can be read, with equivalent semantics, by the newer compilers.
+This proposal extends the spece of compiling Scala programs by those that use
+`infix` in front of `enum case`. Those previously failing programs are by
+default binary compatible. With a correct implementation, this proposal also
+shouldn't introduce any new restrictions for already accepted programs.
 
-If it doesn't do so "by construction", this section should present the ideas of how this could be fixed (through deserialization-time patches and/or alternative binary encodings). It is OK to say here that you don't know how binary and TASTy compatibility will be affected at the time of submitting the proposal. However, by the time it is accepted, those issues will need to be resolved.
+## Related work/Relevant links
 
-This section should also argue to what extent backward source compatibility is preserved. In particular, it should show that it doesn't alter the semantics of existing valid programs.
-
-### Other concerns
-
-If you think of anything else that is worth discussing about the proposal, this is where it should go. Examples include interoperability concerns, cross-platform concerns, implementation challenges.
-
-### Open questions
-
-If some design aspects are not settled yet, this section can present the open questions, with possible alternatives. By the time the proposal is accepted, all the open questions will have to be resolved.
-
-## Alternatives
-
-This section should present alternative proposals that were considered. It should evaluate the pros and cons of each alternative, and contrast them to the main proposal above.
-
-Having alternatives is not a strict requirement for a proposal, but having at least one with carefully exposed pros and cons gives much more weight to the proposal as a whole.
-
-## Related work
-
-This section should list prior work related to the proposal, notably:
-
-- A link to the Pre-SIP discussion that led to this proposal,
-- Any other previous proposal (accepted or rejected) covering something similar as the current proposal,
-- Whether the proposal is similar to something already existing in other languages,
-- If there is already a proof-of-concept implementation, a link to it will be welcome here.
+Links:
+- PR with the draft implementation: allow soft modifier before `enum` `case`
+  [#22072](https://github.com/scala/scala3/pull/22072)
+- Linked issue: Should `infix` work on `enum` `case`?
+  [#22010](https://github.com/scala/scala3/issues/22010)
+- Specification docs page for [Soft
+  Keywords](https://dotty.epfl.ch/docs/reference/soft-modifier.html)
+- Similar (closed) issue on `enum`: Sould `infix` work on `enum`?
+  [#18933](https://github.com/scala/scala3/issues/18933)
+- PR reverting back to following the spec: Align implementation with spec of
+  soft modifiers [#15961](https://github.com/scala/scala3/pull/15961)
 
 ## FAQ
-
-This section will probably initially be empty. As discussions on the proposal progress, it is likely that some questions will come repeatedly. They should be listed here, with appropriate answers.
