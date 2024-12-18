@@ -19,14 +19,7 @@ title: SIP-68 - Soft Modifier for `enum` `case`
 
 ## Summary
 
-<!-- A summary of the proposed changes. This should be no longer than 3 paragraphs.
-It is intended to serve in two ways:
-
-- For a first-time reader, a high-level overview of what they should expect to
-  see in the proposal.
-- For returning readers, a quick reminder of what the proposal is about. -->
-
-TODO
+We propose enabling the use of the `infix` modifier before enum case definitions. This improvement would permit infix notation for constructing types defined by enum cases, provided the definition includes the keyword.
 
 ## Motivation
 
@@ -47,19 +40,17 @@ TODO
 
 ### High-level overview
 
-<!-- A high-level overview of the proposed changes, and how they allow to better
-solve the running examples. This section should be example-heavy, and not dive
-into corner cases.
+This SIP proposes allowing the `infix` soft modifier for enum case definitions. The `infix` keyword would function similarly to its use in class definitions, enabling infix notation for type construction.
 
 Example:
 
 ~~~ scala
-// This is an @main method
-@main def foo(x: Int): Unit =
-  println(x)
-~~~ -->
+enum Expr:
+  infix case Add[L, R](l: L, r: R)
 
-TODO
+import Expr.Add
+val i: Int Add Int = ???
+~~~
 
 ### Specification
 
@@ -87,7 +78,7 @@ soft modifiers for `enum case` in the future. (e.g. experimental soft modifier
 
 ### Compatibility
 
-This proposal extends the spece of compiling Scala programs by those that use
+This proposal extends the space of compiling Scala programs by those that use
 `infix` in front of `enum case`. Those previously failing programs are by
 default binary compatible. With a correct implementation, this proposal also
 shouldn't introduce any new restrictions for already accepted programs.
